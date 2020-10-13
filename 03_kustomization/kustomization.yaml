@@ -4,3 +4,6 @@ kind: Kustomization
 resources:
 - https://github.com/argoproj/argo/manifests/cluster-install/?ref=stable
 - base/workflow-rbac.yaml
+
+patchesStrategicMerge:
+- overlays/production/workflow-controller-spec-security-patch.yaml
