@@ -2,6 +2,14 @@
 
 GitOps using Argo CD at CERN. This repository accompanies the CERN Container Service Webinar "[From zero to running physics analysis workflows with Argo CD](https://indico.cern.ch/event/950886/)".
 
+## Overview
+
+This tutorial consists of several parts that should be followed in order:
+
+1. [Installing Argo CD](#installing-argo-cd) (below)
+2. [Managing Argo CD with Argo CD](01_argo-cd.md)
+3. [Installing Argo Workflows](02_argo-workflows.md)
+
 ## Pre-requisites
 
 - An up-and-running Kubernetes cluster, see [CERN CloudDocs instructions](https://clouddocs.web.cern.ch/containers/quickstart.html)
@@ -33,13 +41,13 @@ On a machine under your control, e.g. an OpenStack VM:
 kubectl port-forward svc/argocd-server -n argocd 8080:443
 ```
 
-Log on to Argo CD using the CLI, get the password:
+The next step is to connect to the Argo CD server. The server is protected by a password, which can be obtained as follows:
 
 ```shell
 kubectl get pods -n argocd -l app.kubernetes.io/name=argocd-server -o name | cut -d'/' -f 2
 ```
 
-Log in with username `admin` and the password obtained above. The `<ARGOCD_SERVER>` will be `localhost:8080` if you are on the same machine (alternatively the hostname). And also set a new password:
+Log in using the CLI with username `admin` and the password obtained above. The `<ARGOCD_SERVER>` will be `localhost:8080` if you are on the same machine (alternatively the hostname). And also set a new password:
 
 ```shell
 argocd login <ARGOCD_SERVER>
@@ -56,50 +64,4 @@ sudo firewall-cmd --list-all
 
 You should now be able to log in with the same credentials as set above by pointing your browser to [`<ARGOCD_SERVER>`](https://localhost:8080).
 
-## Creating your first app
-
-A good first step would be to manage Argo CD itself using Argo CD so that we can upgrade it later if needed. You can create the Argo CD app using the web interface and also the CLI:
-
-```shell
-argocd app create argo-cd --repo https://gitlab.cern.ch/clange/gitops-argo-cd.git --path argo-cd-vanilla --dest-server https://kubernetes.default.svc --dest-namespace argo-cd
-```
-
-This points to a directory in this repository, [argo-cd-vanilla](argo-cd-vanilla), which only contains a single file [kustomization.yaml](argo-cd-vanilla/kustomization.yaml) with the following content:
-
-```yaml
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-
-resources:
-- https://github.com/argoproj/argo-cd/manifests/cluster-install/?ref=stable
-```
-
-A `Kustomization` can be used to customise Kubernetes objects and resources. In the case here, there is no customisation applied, the file only points to a directory [cluster-install](https://github.com/argoproj/argo-cd/blob/stable/manifests/cluster-install/) in the Argo CD GitHub repository that we used for the installation via `kubectl` above selecting the `stable` tag.
-
-_Important_: In `kustomize`, the URL should follow [hashicorp/go-getter URL format](https://github.com/hashicorp/go-getter#url-format).
-
-The other parameters of the `argocd` command are setting the destination cluster (`https://kubernetes.default.svc`, this indicates the one Argo CD is installed in) and the destination namespace (`argo-cd`).
-
-## Declarative setup
-
-Argo CD installs several Custom Resource Definitions (CRDs), one of them being an `Application`. See the [Argo CD Declarative Setup documentation](https://argoproj.github.io/argo-cd/operator-manual/declarative-setup/) for more details.
-
-```yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: argo-cd
-  namespace: argocd
-  finalizers:
-  # Delete resources when deleting app
-  - resources-finalizer.argocd.argoproj.io
-spec:
-  project: default
-  source:
-    repoURL: https://gitlab.cern.ch/clange/gitops-argo-cd.git
-    targetRevision: HEAD
-    path: argo-cd
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: argo-cd
-```
+Continue to [Managing Argo CD with Argo CD](01_argo-cd.md).
