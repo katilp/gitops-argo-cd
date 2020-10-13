@@ -9,6 +9,8 @@ This tutorial consists of several parts that should be followed in order:
 1. [Installing Argo CD](#installing-argo-cd) (below)
 2. [Managing Argo CD with Argo CD](01_argo-cd.md)
 3. [Installing Argo Workflows](02_argo-workflows.md)
+4. [Applying Kustomizations](03_kustomization.md)
+5. [Storing secrets with SOPS and KSOPS](04_secrets.md)
 
 ## Pre-requisites
 

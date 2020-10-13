@@ -1,0 +1,17 @@
+apiVersion: storage.k8s.io/v1beta1
+kind: StorageClass
+metadata:
+  name: manila-csicephfs-share
+provisioner: manila-provisioner
+parameters:
+  type: "Geneva CephFS Testing"
+  zones: nova
+  osSecretName: os-trustee
+  osSecretNamespace: kube-system
+  protocol: CEPHFS
+  backend: csi-cephfs
+  csi-driver: cephfs.csi.ceph.com
+  # id for some_share from `manila list`
+  osShareID: 7698b49b-efa0-4d55-aac8-f18ad7c83bee
+  # id from `manila access-list argo-manila-cephfs-share`
+  osShareAccessID: e53f2a94-ec76-4a1f-8930-d52a123b0110

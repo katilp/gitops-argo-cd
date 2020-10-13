@@ -1,4 +1,4 @@
-# Kustomization
+# Applying Kustomizations
 
 Argo CD supports a wide range of tools with which Kubernetes manifests can be defined. [kustomize](https://kustomize.io) and [helm](https://helm.sh/) charts seem to be the most popular tools in this context. The [helm documentation for Argo CD](https://argoproj.github.io/argo-cd/user-guide/helm/) contains an example for a [helm-guestbook](https://github.com/argoproj/argocd-example-apps/tree/master/helm-guestbook) in case you are interested following this path. In the following, we will, however, focus on `kustomize`.
 
@@ -73,3 +73,5 @@ argo submit -n argo --watch https://raw.githubusercontent.com/argoproj/argo/mast
 ```
 
 The workflow should succeed.
+
+Continue to [Storing secrets with SOPS and KSOPS](04_secrets.md).
