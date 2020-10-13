@@ -71,10 +71,14 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-- https://github.com/argoproj/argo-cd/manifests/install.yaml?ref=stable
+- https://github.com/argoproj/argo-cd/manifests/cluster-install/?ref=stable
 ```
 
-A `Kustomization` can be used to customise Kubernetes objects and resources. In the case here, there is no customisation applied, the file only points to the same [install.yaml](https://github.com/argoproj/argo-cd/blob/stable/manifests/install.yaml) in the Argo CD GitHub repository that we used for the installation via `kubectl` above selecting the `stable` tag (_mind the different URLs_).
+A `Kustomization` can be used to customise Kubernetes objects and resources. In the case here, there is no customisation applied, the file only points to a directory [cluster-install](https://github.com/argoproj/argo-cd/blob/stable/manifests/cluster-install/) in the Argo CD GitHub repository that we used for the installation via `kubectl` above selecting the `stable` tag.
+
+_Important_: In `kustomize`, the URL should follow [hashicorp/go-getter URL format](https://github.com/hashicorp/go-getter#url-format).
+
+The other parameters of the `argocd` command are setting the destination cluster (`https://kubernetes.default.svc`, this indicates the one Argo CD is installed in) and the destination namespace (`argo-cd`).
 
 ## Declarative setup
 
