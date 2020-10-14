@@ -6,5 +6,8 @@ resources:
 - base/workflow-rbac.yaml
 - base/cephfs-sc.yaml
 
+generators:
+- secrets/kerberos-keytab-secret-generator.yaml
+
 patchesStrategicMerge:
 - overlays/production/workflow-controller-spec-security-patch.yaml

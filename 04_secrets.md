@@ -239,7 +239,29 @@ Patch the `argo-cd` app path:
 
 ```shell
 argocd app patch argo-cd --patch='[{"op": "replace", "path": "/spec/source/path", "value": "04_secrets-argo-cd"}]' --type json
-argocd app sync argo-cd sync
+argocd app sync argo-cd
+```
+
+## Adding the encrypted secret to Argo Workflows
+
+For Argo CD to know what to do with the encrypted secret file [kerberos-keytab-secret.enc.yaml](04_secrets/secrets/kerberos-keytab-secret.enc.yaml), a few more steps are needed. A "secret generator" file needs to be added to [04_secrets/secrets/kerberos-keytab-secret-generator.yaml](04_secrets/secrets/kerberos-keytab-secret-generator.yaml) with the following content:
+
+```yaml
+apiVersion: viaduct.ai/v1
+kind: ksops
+metadata:
+  name: kerberos-keytab-secret-generator
+files:
+  - secrets/kerberos-keytab-secret.enc.yaml
+```
+
+This will trigger the decryption of the encrypted secret file when creating the secret into the cluster.
+
+As for all files, the generator needs to be added to the [04_secrets/secrets/kustomization.yaml](04_secrets/secrets/kustomization.yaml) file in a new [generator](https://kubernetes-sigs.github.io/kustomize/api-reference/glossary/#generator) section:
+
+```yaml
+generators:
+- secrets/kerberos-keytab-secret-generator.yaml
 ```
 
 ## Putting things together
