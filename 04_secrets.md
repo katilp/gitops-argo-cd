@@ -1,6 +1,6 @@
 # Storing secrets with SOPS and KSOPS
 
-A realistic physics analysis workflow consists of several steps, which usually all produce intermediate artifacts that are then consumed by the subsequent steps. We will use [CephFS](https://clouddocs.web.cern.ch/containers/tutorials/cephfs.html) for this purpose.
+A realistic physics analysis workflow consists of several steps, which usually all produce intermediate artifacts that are then consumed by the subsequent steps. We will use [CephFS](https://clouddocs.web.cern.ch/containers/tutorials/cephfs.html) for this purpose. As a last step, we want to copy the workflow result to EOS, which requires a kerberos token for which we will store the keytab as a secret.
 
 ## Creating CephFS storage
 
@@ -91,17 +91,162 @@ openstack secret store -s symmetric -p "$(echo -e $KEY)" -n gitops-argo-cd
 SECRET_HREF=$(openstack secret list -n gitops-argo-cd -f value | awk '{print $1}')
 ```
 
-### Creating the CephFS secret
+### Creating the keytab secret
 
-The secret to access CephFS needs to look as follows:
+Let's create the keytab first (replace `clange` by your own username accordingly):
+
+```shell
+ktutil
+# Then inside ktutil:
+addent -password -p clange@CERN.CH -k 1 -e aes256-cts
+addent -password -p clange@CERN.CH -k 1 -e arcfour-hmac-md5
+wkt .keytab
+q
+```
+
+Try if this works:
+
+```shell
+kinit -kt .keytab clange
+```
+
+Both username and keytab need to be converted using `base64` (again, replace `clange`):
+
+```shell
+cat .keytab | base64 -w 0
+echo -n 'clange@CERN.CH' | base64
+```
+
+Create a new file called `kerberos-keytab-secret.yaml` and fill it with the following content using the output above:
 
 ```yaml
 apiVersion: v1
 kind: Secret
 metadata:
-    name: os-trustee
-    namespace: kube-system
+  name: kerberos-keytab-secret
 type: Opaque
 data:
+  user: <output of echo -n 'clange@CERN.CH' | base64>
+  keytab: <output of cat .keytab | base64 -w 0>
+```
 
+Do not add this file under version control!
+
+### Creating the encrypted secret
+
+We will create the encrypted secret from the file just created:
+
+```shell
+sops -e --barbican "${SECRET_HREF}" --encrypted-regex '^(user)|(.*key.*)$' \
+kerberos-keytab-secret.yaml > kerberos-keytab-secret.enc.yaml
+```
+
+To decrypt, run:
+
+```shell
+sops -d kerberos-keytab-secret.enc.yaml
+```
+
+## Using encrypted secrets with Argo CD
+
+The next step is to add the `kerberos-keytab-secret.enc.yaml` file under version control.
+Argo CD itself is un-opinionated on [secret management tools](https://argoproj.github.io/argo-cd/operator-manual/secret-management/), and we are going to use [KSOPS](https://github.com/viaduct-ai/kustomize-sops#argo-cd-integration-), but in a [patched version](https://github.com/clelange/kustomize-sops), which supports SOPS with Barbican.
+
+For this to work, we need to extend the Argo CD (attention, not the Workflows one!) [kustomization.yaml](04_secrets-argo-cd/kustomization.yaml) in a new path [4_secrets-argo-cd](4_secrets-argo-cd) to look as follows:
+
+```yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- https://github.com/argoproj/argo-cd/manifests/cluster-install/?ref=stable
+
+patchesStrategicMerge:
+- overlays/production/argocd-cm-kustomize-alpha-plugins-patch.yaml
+- overlays/production/argocd-repo-server-ksops-patch.yaml
+```
+
+The patch files to be added look like this [overlays/production/argocd-cm-kustomize-alpha-plugins-patch.yaml](04_secrets-argo-cd/overlays/production/argocd-cm-kustomize-alpha-plugins-patch.yaml):
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+  labels:
+    app.kubernetes.io/name: argocd-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  kustomize.buildOptions: "--enable_alpha_plugins"
+```
+
+and [overlays/production/argocd-repo-server-ksops-patch.yaml](04_secrets-argo-cd/overlays/production/argocd-repo-server-ksops-patch.yaml):
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: argocd-repo-server
+spec:
+  template:
+    spec:
+      # 1. Define an emptyDir volume which will hold the custom binaries
+      volumes:
+        - name: custom-tools
+          emptyDir: {}
+        - name: cloud-config
+          hostPath:
+            path: /etc/kubernetes/
+            type: Directory
+      # 2. Use an init container to download/copy custom binaries into the emptyDir
+      initContainers:
+        - name: install-ksops
+          # Match Argo CD Go version
+          # see https://github.com/argoproj/argo-cd/blob/stable/Dockerfile
+          image: clelange/ksops:v2.2.0-barbican
+          command: ["/bin/sh", "-c"]
+          args:
+            - echo "Installing KSOPS...";
+              export PKG_NAME=ksops;
+              mv ${PKG_NAME}.so /custom-tools/;
+              mv $GOPATH/bin/kustomize /custom-tools/;
+              echo "Done.";
+          volumeMounts:
+            - mountPath: /custom-tools
+              name: custom-tools
+      # 3. Volume mount the custom binary to the bin directory (overriding the existing version)
+      containers:
+        - name: argocd-repo-server
+          volumeMounts:
+            - mountPath: /usr/local/bin/kustomize
+              name: custom-tools
+              subPath: kustomize
+              # Verify this matches a XDG_CONFIG_HOME=/.config env variable
+            - mountPath: /.config/kustomize/plugin/viaduct.ai/v1/ksops/ksops.so
+              name: custom-tools
+              subPath: ksops.so
+            - mountPath: /etc/kubernetes/
+              name: cloud-config
+          # 4. Set the XDG_CONFIG_HOME env variable to allow kustomize to detect the plugin
+          env:
+            - name: XDG_CONFIG_HOME
+              value: /.config
+            - name: GOPHERCLOUD_CONFIG
+              value: /etc/kubernetes/cloud-config
+```
+
+Patch the `argo-cd` app path:
+
+```shell
+argocd app patch argo-cd --patch='[{"op": "replace", "path": "/spec/source/path", "value": "04_secrets-argo-cd"}]' --type json
+argocd app sync argo-cd sync
+```
+
+## Putting things together
+
+Having added all these files, we need to point Argo CD to the new directory [04_secrets](04_secrets):
+
+```shell
+argocd app patch argo-workflows --patch='[{"op": "replace", "path": "/spec/source/path", "value": "04_secrets"}]' --type json
+argocd app sync argo-workflows sync
 ```
