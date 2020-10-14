@@ -21,10 +21,41 @@ spec:
     path: 04_secrets-argo-cd
   destination:
     server: https://kubernetes.default.svc
-    namespace: argo-cd
+    namespace: argocd
 ```
 
-Similarly, one can add the `argo-workflows` app into the same [apps](apps) directory. Mind that it is important that the `Application` itself is installed into the `argocd` namespace.
+Similarly, one can add the [argo-workflows](apps/argo-workflows.yaml) app into the same [apps](apps) directory:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argo-workflows
+  namespace: argocd
+  finalizers:
+  # Delete resources when deleting app
+  - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://gitlab.cern.ch/clange/gitops-argo-cd.git
+    targetRevision: HEAD
+    path: 04_secrets
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argo
+```
+
+Mind that it is important that the `Application` itself is installed into the `argocd` namespace whereas its `specs` then end up in a (different) destination namespace.
+
+Another important thing to note is the use of `finalizers`:
+
+```yaml
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
+```
+
+By default, resources won't be deleted when deleting the app. Adding this `finalizer` will change that. In the example here, we want to keep Argo CD running, but it is OK to delete Argo Workflows.
 
 One can install all apps at once like this:
 

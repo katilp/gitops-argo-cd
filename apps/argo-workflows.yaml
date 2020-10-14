@@ -1,14 +1,17 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: argo-cd
+  name: argo-workflows
   namespace: argocd
+  finalizers:
+  # Delete resources when deleting app
+  - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
     repoURL: https://gitlab.cern.ch/clange/gitops-argo-cd.git
     targetRevision: HEAD
-    path: 04_secrets-argo-cd
+    path: 04_secrets
   destination:
     server: https://kubernetes.default.svc
-    namespace: argocd
+    namespace: argo
