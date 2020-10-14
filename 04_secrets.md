@@ -203,7 +203,7 @@ spec:
         - name: install-ksops
           # Match Argo CD Go version
           # see https://github.com/argoproj/argo-cd/blob/stable/Dockerfile
-          image: clelange/ksops:v2.2.0-1-barbican
+          image: clelange/ksops:v2.1.2-go-1.14-barbican
           command: ["/bin/sh", "-c"]
           args:
             - echo "Installing KSOPS...";
