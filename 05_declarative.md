@@ -36,3 +36,7 @@ argocd app create apps \
     --path apps
 argocd app sync apps
 ```
+
+---
+
+This has been a first demo of Argo CD. For more, please see the [Argo CD documentation](https://argoproj.github.io/argo-cd/).

@@ -273,4 +273,24 @@ argocd app patch argo-workflows --patch='[{"op": "replace", "path": "/spec/sourc
 argocd app sync argo-workflows sync
 ```
 
+## Running a physics analysis workflow
+
+We are now ready to run a more complex physics analysis workflow. The [example](https://gitlab.cern.ch/clange/gitops-argo-cd/-/blob/master/bsm-search-workflow/bsm-search.yaml) given here is still very much simplified, but it mimics several parts of a realistic physics analysis. It consists of a directed acyclic graph (DAG) and splits into several dynamically-generated parallel jobs that are then collected again (map reduce) to produce a few plots. The example is taken from the [REANA BSM search demo](https://github.com/reanahub/reana-demo-bsm-search) and reimplemented using Argo Workflows.
+
+If you would like to follow the workflow in the Argo Workflows web UI, create a `port-forward` on a machine under your control:
+
+```shell
+kubectl port-forward svc/argo-server -n argo 8888:2746
+```
+
+You should then be able to see the UI by pointing your browser to [http://localhost:8888](http://localhost:8888) (replace by your machine name).
+
+Let's submit the workflow:
+
+```shell
+argo submit -n argo --watch https://gitlab.cern.ch/clange/gitops-argo-cd/-/raw/master/bsm-search-workflow/bsm-search.yaml
+```
+
+---
+
 Continue with [Declarative Apps](05_declarative.md).

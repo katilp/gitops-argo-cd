@@ -74,4 +74,6 @@ argo submit -n argo --watch https://raw.githubusercontent.com/argoproj/argo/mast
 
 The workflow should succeed.
 
+---
+
 Continue to [Storing secrets with SOPS and KSOPS](04_secrets.md).

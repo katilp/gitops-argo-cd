@@ -46,4 +46,6 @@ argo submit -n argo --watch https://raw.githubusercontent.com/argoproj/argo/mast
 
 The workflow will complete, but then give an error: `failed to save outputs: Failed to establish pod watch: timed out waiting for the condition`. We need to adjust the workflow RBAC role to make this work. Let's do this by adding a kustomization.
 
+---
+
 Continue to [Kustomization](03_kustomization.md).

@@ -32,4 +32,6 @@ argocd app sync argo-cd
 
 We now have an Argo CD installation managed via Argo CD controlled via git!
 
+---
+
 Continue to [Installing Argo Workflows](02_argo-workflows.md).

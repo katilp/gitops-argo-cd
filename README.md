@@ -67,4 +67,6 @@ sudo firewall-cmd --list-all
 
 You should now be able to log in with the same credentials as set above by pointing your browser to [`<ARGOCD_SERVER>`](https://localhost:8080).
 
+---
+
 Continue to [Managing Argo CD with Argo CD](01_argo-cd.md).
