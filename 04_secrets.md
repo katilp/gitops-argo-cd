@@ -203,7 +203,7 @@ spec:
         - name: install-ksops
           # Match Argo CD Go version
           # see https://github.com/argoproj/argo-cd/blob/stable/Dockerfile
-          image: clelange/ksops:v2.2.0-barbican
+          image: clelange/ksops:v2.2.0-1-barbican
           command: ["/bin/sh", "-c"]
           args:
             - echo "Installing KSOPS...";
@@ -266,7 +266,7 @@ generators:
 
 ## Putting things together
 
-Having added all these files, we need to point Argo CD to the new directory [04_secrets](04_secrets):
+Having added all these files, we need to point Argo CD to the new directory [04_secrets](04_secrets) for the `argo-workflows` app:
 
 ```shell
 argocd app patch argo-workflows --patch='[{"op": "replace", "path": "/spec/source/path", "value": "04_secrets"}]' --type json
