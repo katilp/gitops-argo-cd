@@ -272,3 +272,5 @@ Having added all these files, we need to point Argo CD to the new directory [04_
 argocd app patch argo-workflows --patch='[{"op": "replace", "path": "/spec/source/path", "value": "04_secrets"}]' --type json
 argocd app sync argo-workflows sync
 ```
+
+Continue with [Declarative Apps](05_declarative.md).

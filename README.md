@@ -11,6 +11,7 @@ This tutorial consists of several parts that should be followed in order:
 3. [Installing Argo Workflows](02_argo-workflows.md)
 4. [Applying Kustomizations](03_kustomization.md)
 5. [Storing secrets with SOPS and KSOPS](04_secrets.md)
+6. [Declarative Apps](05_declarative.md)
 
 ## Pre-requisites
 
