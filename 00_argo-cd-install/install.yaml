@@ -2792,4 +2792,4 @@ spec:
         name: ssh-known-hosts
       - configMap:
           name: argocd-tls-certs-cm
-        name: tls-cert
+        name: tls-certs
